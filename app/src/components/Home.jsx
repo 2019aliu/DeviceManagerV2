@@ -12,23 +12,42 @@ class Home extends Component {
 
     componentDidMount() {
         this.setState({isLoading: true});
-        fetch('/api/devices', {
-            method: 'GET',
+        fetch('/graphql', {
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
-            }
+            },
+            body: JSON.stringify({query:
+                    'query {\n' +
+                    '    allDevices {\n' +
+                    '        id\n' +
+                    '        deviceType\n' +
+                    '        description\n' +
+                    '        quantity\n' +
+                    '    }\n' +
+                    '}'
+            })
         }).then(response => response.json())
-            .then(data => this.setState({devices: data, isLoading: false}));
+            .then(data => this.setState({devices: data.data.allDevices, isLoading: false}));
     }
 
     async remove(id) {
-        await fetch('/api/device', {
-            method: 'DELETE',
+        await fetch('/graphql', {
+            method: 'POST',
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({"id": id})
+            body: JSON.stringify({query:
+                    `mutation deleteDeviceById {
+                        deleteDeviceById (id: "${id}") {
+                            id
+                            deviceType
+                            description
+                            quantity
+                        }
+                    }`
+            })
         }).then(() => {
             let updatedDevices = [...this.state.devices].filter(i => i.id !== id);
             this.setState({devices: updatedDevices});

@@ -23,14 +23,14 @@ public class DeviceDaoImpl implements DeviceDao {
 
     private static final String KEY = "device";
 
-    public Boolean saveDevice(Device device) {
+    public Device saveDevice(Device device) {
         try {
             Map deviceHash = new ObjectMapper().convertValue(device, Map.class);
             redisTemplate.opsForHash().putIfAbsent(KEY, device.getId(), deviceHash);
-            return true;
+            return findById(device.getId());
         } catch (Exception e) {
             e.printStackTrace();
-            return false;
+            return null;
         }
     }
 
@@ -56,10 +56,10 @@ public class DeviceDaoImpl implements DeviceDao {
         return deviceList;
     }
 
-    public Boolean updateDevice(Device device) {
+    public Device updateDevice(Device device) {
         Map deviceHash = new ObjectMapper().convertValue(device, Map.class);
         redisTemplate.opsForHash().put(KEY, device.getId(), deviceHash);
-        return true;
+        return findById(device.getId());
     }
 
     public void deleteDevice(String id) {

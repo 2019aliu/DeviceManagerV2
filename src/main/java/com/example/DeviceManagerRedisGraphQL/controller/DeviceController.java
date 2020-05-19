@@ -5,6 +5,7 @@ import com.example.DeviceManagerRedisGraphQL.service.DeviceManagerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,14 +23,16 @@ public class DeviceController {
     DeviceManagerService service;
 
     @PostMapping("/device")
-    public ResponseEntity<String> addDevice(@RequestBody Device device) throws URISyntaxException {
-        if (service.findByDeviceType(device.getDeviceType()).size() > 0) {
+    public ResponseEntity<?> addDevice(@RequestBody Device device) throws URISyntaxException {
+        List<Device> existingDevices = service.findByDeviceType(device.getDeviceType());
+        if (existingDevices != null && existingDevices.size() > 0) {
             return ResponseEntity.badRequest().body(
                     String.format("A device of type %s has already been created", device.getDeviceType()));
         }
-        Boolean result = service.saveDevice(device);
-        if (result) {
-            return ResponseEntity.created(new URI(BASEURL + "/devices?deviceType=" + device.getDeviceType())).build();
+        Device result = service.saveDevice(device);
+        if (result != null) {
+            return ResponseEntity.created(new URI(BASEURL + "/devices?deviceType=" + device.getDeviceType()))
+                    .body(result);
         } else {
             return ResponseEntity.badRequest().build();
         }
@@ -54,8 +57,8 @@ public class DeviceController {
         if (device.getDeviceType() == null) {
             return ResponseEntity.badRequest().body("No device type was specified");
         }
-        Boolean result = service.updateDevice(device);
-        if (result) {
+        Device result = service.updateDevice(device);
+        if (result != null) {
             return ResponseEntity.ok(device);
         } else {
             return ResponseEntity.badRequest().body("Error updating the device");
@@ -63,8 +66,9 @@ public class DeviceController {
     }
 
     @DeleteMapping("/device")
-    public ResponseEntity<?> deleteDevice(@RequestBody Device device) {
+    public ResponseEntity<Device> deleteDevice(@RequestBody Device device) {
+        Device deletedDevice = service.findById(device.getId());
         service.deleteDevice(device.getId());
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(deletedDevice);
     }
 }

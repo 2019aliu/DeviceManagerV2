@@ -6,7 +6,8 @@ import AppNavbar from "./AppNavbar";
 class DeviceEdit extends Component {
     emptyItem = {
         deviceType: '',
-        description: ''
+        description: '',
+        quantity: 0
     }
 
     constructor(props) {
@@ -20,13 +21,26 @@ class DeviceEdit extends Component {
 
     async componentDidMount() {
         if (this.props.match.params.name !== 'new') {
-            const device = await (await fetch(`/api/device?deviceType=${this.props.match.params.name}`, {
-                method: 'GET',
+            const device = await (await fetch('/graphql', {
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
-                }
+                },
+                body: JSON.stringify({
+                    query:
+                        `query deviceByDeviceType {
+                        deviceByDeviceType (deviceType: "${this.props.match.params.name}") {
+                            id
+                            deviceType
+                            description
+                            quantity
+                        }
+                    }`
+                })
             })).json();
-            this.setState({item: device});
+            this.setState({item: device.data.deviceByDeviceType});
+        } else {
+            this.setState({item: this.emptyItem});
         }
     }
 
@@ -37,19 +51,32 @@ class DeviceEdit extends Component {
         let item = {...this.state.item};
         item[name] = value;
         this.setState({item});
+        console.log(typeof item.quantity);
     }
 
     async handleSubmit(event) {
         event.preventDefault();
         const {item} = this.state;
-        await fetch('/api/device', {
-            method: item.id ? 'PUT' : 'POST',
+        let method = item.id ? 'changeDevice' : 'addDevice';
+        let addedId = item.id ? 'id: "' + item.id + '", ' : '';
+        console.log(method, addedId);
+        await fetch('/graphql', {
+            method: 'POST',
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(item)
-        });
+            body: JSON.stringify({query:
+                    `mutation ${method} {
+                        ${method} (${addedId}deviceType: "${item.deviceType}", description: "${item.description}", quantity: ${item.quantity}) {
+                            id
+                            deviceType
+                            description
+                            quantity
+                        }
+                    }`
+            })
+        }).then(response => response.json()).then(data => console.log(data));
         this.props.history.push('/');
     }
 

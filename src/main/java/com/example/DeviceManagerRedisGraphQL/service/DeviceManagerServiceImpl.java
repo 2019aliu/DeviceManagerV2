@@ -13,7 +13,7 @@ public class DeviceManagerServiceImpl implements DeviceManagerService {
     @Autowired
     DeviceDao deviceDao;
 
-    public Boolean saveDevice(Device device) {
+    public Device saveDevice(Device device) {
         String generatedID = UUID.randomUUID().toString();
         device.setId(generatedID);
         return deviceDao.saveDevice(device);
@@ -38,7 +38,7 @@ public class DeviceManagerServiceImpl implements DeviceManagerService {
         return deviceDao.findByDeviceType(deviceType);
     }
 
-    public Boolean updateDevice(Device device) {
+    public Device updateDevice(Device device) {
         return deviceDao.updateDevice(device);
     }
 
